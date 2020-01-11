@@ -23,7 +23,7 @@ public:
 	/*类函数*/
 	void levelup();
 	void use(Potion&);
-	void hurt(int rate, int atk);
+	void hurt(double rate, int atk);
 };
 
 Pokemon Ciken;        //水鸡
@@ -31,13 +31,27 @@ Pokemon Charmander;   //小火龙
 
 void pokemon_start()
 {
+	//图片
+	/*小火龙*/
+	loadimage(&Charmander.pic, "test\\firedragon.png");
+	loadimage(&Charmander.picB, "test\\firedragonblack.png");
+	loadimage(&Charmander.piclist, "test\\小火龙图标.png");
+	loadimage(&Charmander.piclistB, "test\\小火龙图标B.png");
+	/*水稚鸡*/
+	loadimage(&Ciken.pic, "test\\ciken.png");
+	loadimage(&Ciken.picB, "test\\cikenblack.png");
+	loadimage(&Ciken.piclist, "test\\水稚鸡图标.png");
+	loadimage(&Ciken.piclistB, "test\\水稚鸡图标B.png");
+	//基本属性
 	Ciken.max_life = 100;
-	Ciken.level = 1;
+	Ciken.level = 100;
 	Ciken.ATK = 10;
 	Ciken.need_EXP = 50;
 	Ciken.EXP = 0;
 	Ciken.life = Ciken.max_life;
 	Ciken.property = WATER;
+	Ciken.skill.push_back(w_1);
+	Ciken.skill.push_back(n_1);
 	Ciken.name = "水稚鸡";
 
 	Charmander.max_life = 100;
@@ -47,6 +61,8 @@ void pokemon_start()
 	Charmander.EXP = 49;
 	Charmander.life = Charmander.max_life;
 	Charmander.property = FIRE;
+	Charmander.skill.push_back(f_1);
+	Charmander.skill.push_back(n_1);
 	Charmander.name = "小火龙";
 }
 
@@ -73,7 +89,7 @@ void Pokemon::use(Potion& item)		//使用道具
 	}
 	item.count--;
 }
-void Pokemon::hurt(int rate, int atk)
+void Pokemon::hurt(double rate, int atk)
 {
 	life -= atk * rate;
 	life = (life < 0) ? 0 : life;

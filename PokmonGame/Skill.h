@@ -1,7 +1,10 @@
 #pragma once
-#define FIRE 0
-#define WATER 1
-#define GLASS 2
+
+#define NORMAL 0
+#define FIRE 1
+#define WATER 2
+#define GLASS 3
+
 
 class Skill {
 public:
@@ -14,7 +17,68 @@ public:
 	string music;
 	string pic;
 	void play();		//²¥·Å¼¼ÄÜ¶¯»­
+	bool operator < (const int& a);
+	bool operator > (const int& a);
 };
+Skill f_1;				//»ðÃç
+Skill w_1;				//Ë®Ç¹
+Skill n_1;				//×²»÷
+void skill_startup()
+{
+	f_1.property = FIRE;
+	f_1.power = 15;
+	f_1.name = "»ðÃç";
+	f_1.PP = 20;
+	f_1.PPmax = 20;
+
+	w_1.property = WATER;
+	w_1.power = 15;
+	w_1.name = "Ë®Ç¹";
+	w_1.PP = 20;
+	w_1.PPmax = 20;
+
+	n_1.property = NORMAL;
+	n_1.power = 12;
+	n_1.name = "×²»÷";
+	n_1.PP = 20;
+	n_1.PPmax = 20;
+}
+bool Skill::operator< (const int& a)
+{
+	if (a == property) return 0;
+	switch (a)
+	{
+	case FIRE:
+		switch (property)
+		{
+		case WATER:return 0;
+		case GLASS:return 1;
+		default:break;
+		}
+		break;
+	case WATER:
+		switch (property)
+		{
+		case FIRE:return 1;
+		case GLASS:return 0;
+		default:break;
+		}
+		break;
+	case GLASS:
+		switch (property)
+		{
+		case WATER:return 1;
+		case FIRE:return 0;
+		default:break;
+		}
+		break;
+	}
+}
+bool Skill::operator> (const int& a) 
+{
+	if (a == property || a == NORMAL || property == NORMAL) return 0;
+	return !Skill::operator<(a);
+}
 void Skill::play()
 {
 

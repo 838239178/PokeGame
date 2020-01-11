@@ -17,6 +17,7 @@ public:
 	int money;					//角色的钱
 	int useNo;					//使用第几只Pokemon
 };
+
 Npc role1;				//主角
 vector<Npc> npc(10);	//路人
 

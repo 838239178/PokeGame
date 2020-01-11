@@ -16,12 +16,13 @@
 		---》随机遇敌
 	5.战斗系统  （场景绘制，技能选择，精灵状态变化，背包道具数量变化，技能动画） 未完成(最大难点）
 		---》场景绘制										 部分完成
-		---》技能
+		---》技能											!!!!!!
 		---》逃跑											初步完成
 	6.音乐（背景音乐，战斗音乐，技能音效)					大部分完成
 	7.存档系统
 	8.道具系统												初步完成
 */
+//对战时信息播放速度有待优化调整
 
 #include <iostream>
 #include <string>
@@ -85,8 +86,9 @@ void battleSuccess(Npc&);			//战斗胜利动画
 void battleLose();					//战斗失败效果
 void battlemusic_open();			//战斗相关音乐打开
 void battlemusic_close();			//………………关闭
-void playerAttack(Npc&);			//玩家攻击动画及效果
-void playerRun(Npc&);					//逃跑
+void battlemenu();					//战斗时的菜单
+void playerAttack(Npc&,int);		//玩家攻击动画及效果
+void playerRun(Npc&);				//逃跑
 void emyAttack(Npc&);				//敌人进攻
 void attackflush(Npc);				//攻击动画
 int is_over(Npc&);
@@ -147,6 +149,7 @@ void startup()
 
 	//初始化
 	main_mapstart();
+	skill_startup();
 	pokemon_start();
 	npc_strat();
 
@@ -170,21 +173,13 @@ void startup()
 	loadimage(&npc[1].pic, "test\\npc2.png");
 	loadimage(&npc[1].battlepic, "test\\npc1fight.png");
 	loadimage(&npc[1].battlepicB, "test\\npc1fightblack.png");
-	loadimage(&Charmander.pic, "test\\firedragon.png");
-	loadimage(&Charmander.picB, "test\\firedragonblack.png");
-	loadimage(&Charmander.piclist, "test\\小火龙图标.png");
-	loadimage(&Charmander.piclistB, "test\\小火龙图标B.png");
-	loadimage(&Ciken.pic, "test\\ciken.png");
-	loadimage(&Ciken.picB, "test\\cikenblack.png");
-	loadimage(&Ciken.piclist, "test\\水稚鸡图标.png");
-	loadimage(&Ciken.piclistB, "test\\水稚鸡图标B.png");
 	loadimage(&hp_potion.pic, "test\\hppotion.png");
 	loadimage(&battle, "test\\battle1.png");
 	loadimage(&msgbk[0], "test\\msgbk.png");		// 0 ：战斗的对话框
 	loadimage(&msgbk[1], "test\\msgtalk.png");		// 1：与npc对话
 	loadimage(&msgbk[2], "test\\menu.png");			//2：菜单
-	loadimage(&statebk[0], "test\\fire.png");		//状态窗口
-	loadimage(&statebk[1], "test\\water.png");		//状态窗口
+	loadimage(&statebk[1], "test\\fire.png");		//状态窗口
+	loadimage(&statebk[2], "test\\water.png");		//状态窗口
 	loadimage(&bottom[0], "test\\bt_attack.png");	//攻击按钮
 	loadimage(&bottom[1], "test\\point.png");		//指示器
 	loadimage(&bottom[2], "test\\bt_bag.png");
@@ -618,43 +613,66 @@ void battleLose()
 void attackflush(Npc emy)
 {
 	//进攻动画
-	if (turn == -1) playerflush = 15;
-	else if (turn == 1) emyflush = 15;
+	if (turn == -2)
+		playerflush = 15;
+	else if (turn == 1)
+		emyflush = 15;
+	int tmp = turn;
+	turn = 0;
 	battleshow(emy);
 	Sleep(150);
 	battleshow(emy);
+	turn = (tmp == -2) ? 1 : -1;
 	//
 }
-void playerAttack(Npc& emy)
+void playerAttack(Npc& emy,int no)
 {
+	if (no >= role1.theMON[role1.useNo].skill.size())
+		return;
+	Skill skl = role1.theMON[role1.useNo].skill[no];
+	string s = "你使用了" + skl.name;
 	putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
-	outtextxy(40, 300, "你使用了撞击");
+	outtextxy(40, 300, s.c_str());
 	FlushBatchDraw();
-	attackflush(emy);
-	playmic("attackmic");
 	Sleep(600);
 	double r = 1;   //伤害倍数；
 	srand(time(NULL));
+	//命中的判定
 	if (3 == rand() % 10) {
 		putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
 		outtextxy(40, 300, "没有命中");
 		FlushBatchDraw();
-		r = 0;
+		Sleep(600);
 	}
 	else {
+		attackflush(emy);
+		playmic("attackmic");
+		//属性克制的判定
 		putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
-		outtextxy(40, 300, "效果一般");
+		if (skl > emy.theMON[emy.useNo].property) {
+			outtextxy(40, 300, "效果拔群");
+			r *= 1.5;
+		}
+		else if (skl < emy.theMON[emy.useNo].property) {
+			outtextxy(40, 300, "效果微弱");
+			r *= 0.5;
+		}
+		else
+			outtextxy(40, 300, "效果一般");
 		FlushBatchDraw();
+		Sleep(600);
+		//命中要害的判定
 		srand(time(NULL));
 		if (3 == rand() % 7) {
-			Sleep(600);
 			putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
 			outtextxy(40, 300, "命中要害");
 			FlushBatchDraw();
-			r = 1.5;
+			Sleep(600);
+			r *= 1.5;
 		}
 	}
-	emy.theMON[emy.useNo].hurt(r, role1.theMON[role1.useNo].ATK);
+	int damage = role1.theMON[role1.useNo].ATK * 0.3 + skl.power;
+	emy.theMON[emy.useNo].hurt(r, damage);
 }
 void playerRun(Npc& emy)
 {
@@ -702,14 +720,22 @@ void battleinput(Npc& emy)
 		else if (GetAsyncKeyState(0x41) & 0x8000) {
 			if (point3X == 38 && point3Y == 299)			//左上按钮
 			{
-				playerAttack(emy);
-				turn = 1;
+				if(turn == -1)
+					turn = -2;
+				else if (turn == -2) {
+					playerAttack(emy, 0);
+					//turn = 1;
+				}
 			}
 			else if (point3X == 252 && point3Y == 299)		//右上按钮
 			{
 				if (turn == -1) {								//如果是总菜单就是背包按钮
 					BagSys();
 					battleshow(emy);
+				}
+				else if (turn == -2) {
+					playerAttack(emy, 1);
+					//turn = 1;
 				}
 			}
 			else if (point3X == 252 && point3Y == 379)		//右下按钮
@@ -718,8 +744,16 @@ void battleinput(Npc& emy)
 					playerRun(emy);
 					turn = 1;
 				}
+				else if (turn == -2) {
+					playerAttack(emy, 3);
+					//turn = 1;
+				}
 			}
 			Sleep(500);
+		}
+		else if (GetAsyncKeyState(0x44) & 0x8000) {
+			if (turn == -2)
+				turn = -1;
 		}
 	}
 	FlushMouseMsgBuffer();
@@ -738,31 +772,35 @@ void emyAttack(Npc& emy)   //敌人的攻击方式
 		playmic("covermic");
 		Sleep(800);
 		emy.theMON[emy.useNo].life += emy.item[0].size;
+		turn = -1;
 	}
-	else {
+	else {	
 		outtextxy(40, 300, "对方使用了撞击");
 		FlushBatchDraw();
-		attackflush(emy);
-		playmic("attackmic");
-		Sleep(600);
+		Sleep(600);		
 		double r = 1;   //伤害倍数；
 		srand(time(NULL));
 		if (3 == rand() % 10) {
 			putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
 			outtextxy(40, 300, "没有命中");
 			FlushBatchDraw();
+			Sleep(600);
 			r = 0;
 		}
 		else {
+			attackflush(emy);
+			playmic("attackmic");
 			putimage(0, 279, &msgbk[0]);    //覆盖之前的画面
 			outtextxy(40, 300, "效果一般");
 			FlushBatchDraw();
+			Sleep(600);
 			srand(time(NULL));
 			if (3 == rand() % 7) {
 				Sleep(600);
 				putimage(0, 279, &msgbk[0]);//覆盖之前的画面
 				outtextxy(40, 300, "命中要害");
 				FlushBatchDraw();
+				Sleep(600);
 				r = 1.5;
 			}
 		}
@@ -842,12 +880,27 @@ void battlestart(Npc& emy)														//战斗开始的场景（只播放一�
 }
 void battlemenu()
 {
+	Pokemon temp = role1.theMON[role1.useNo];
 	if (turn == -1) {
 		putimage(point3X, point3Y, &bottom[5]);		//指示器 
 		putimage(40, 300, &bottom[0]);				//攻击按钮
 		putimage(254, 300, &bottom[2]);				//背包
 		putimage(40, 380, &bottom[3]);				//精灵列表
 		putimage(254, 380, &bottom[4]);				//逃跑
+	}
+	else if (turn == -2) {
+		putimage(point3X, point3Y, &bottom[5]);		//指示器 
+		int i = 0;
+		for (int y = 300; y <= 380; y += 80) {
+			for (int x = 40; x <= 254; x += 214) {
+				outtextxy(x, y, temp.skill[i].name.c_str());
+				if (i++ == temp.skill.size() - 1) {
+					i = -1;
+					break;
+				}
+			}
+			if (i == -1) break;
+		}
 	}
 }
 void battleshow(Npc& emy)  //绘制战斗场景
@@ -861,12 +914,10 @@ void battleshow(Npc& emy)  //绘制战斗场景
 		playmic("deadmic", "repeat");
 	else
 		stopmic("deadmic");
-	;
 	putimage(0, 0, &battle);						//场景
 	putimage(0, 279, &msgbk[0]);					//对话框
 
-	if (playerflush != 15)battlemenu();
-
+	if (playerflush != 15) battlemenu();
 	//主角
 	putimage(10, 120, &statebk[role1.theMON[role1.useNo].property]);//状态窗口		
 	putimage(30 + playerflush, 159, &role1.theMON[role1.useNo].picB, NOTSRCERASE);//主角宠物
@@ -958,7 +1009,7 @@ void battlesys(Npc& emy)   //战斗系统
 		if (turn > 0)
 		{
 			emyAttack(emy);
-			turn = -1;
+			//turn = -1;
 		}
 		else
 		{
